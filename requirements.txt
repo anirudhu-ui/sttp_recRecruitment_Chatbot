@@ -1,0 +1,15 @@
+langgraph
+langgraph-checkpoint-sqlite
+langchain-core
+langchain-groq
+langchain-google-genai
+langchain-chroma
+langchain-text-splitters
+langchain-tavily
+tavily-python
+chromadb
+pymupdf
+reportlab
+pydantic
+python-dotenv
+flask>=3.0.0

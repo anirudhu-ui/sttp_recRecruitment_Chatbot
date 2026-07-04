@@ -1,0 +1,15 @@
+Name: Sneha Patil
+Contact: sneha.patil.eng@gmail.com | Pune, India
+
+Skills: Python, Django, PostgreSQL, Git, pytest, Docker, AWS S3, Lambda,
+basic Kafka
+
+Experience: 2.5 years as a Software Engineer at CloudNest Technologies,
+working on a Django-based document management SaaS product.
+
+Project: Built a serverless document-processing pipeline using AWS
+Lambda and S3 event triggers, with a Kafka consumer for downstream
+notifications. Maintained 90%+ test coverage using pytest across the
+core billing module.
+
+Education: B.Tech in Computer Science and Engineering, VIT Pune, 2022.

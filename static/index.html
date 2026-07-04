@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecruitFlow — AI-Powered Resume Screening</title>
+<meta name="description" content="Upload resumes, scan and score candidates against job descriptions, and generate tailored interview questions — all powered by AI.">
+
+<!-- Fonts: Hanken Grotesk (display + body) & JetBrains Mono (metadata) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="page">
+
+  <header class="hero">
+    <div class="hero-mark" aria-hidden="true">RF</div>
+    <div>
+      <h1>RecruitFlow</h1>
+      <p class="hero-sub">Upload up to 20 resumes, scan &amp; score the whole batch against a JD, then prep interview questions per candidate.</p>
+    </div>
+  </header>
+
+  <!-- STAGE RAIL -->
+  <nav class="rail" id="rail" aria-label="Progress steps">
+    <div class="rail-step" data-step="upload">
+      <div class="rail-dot"></div>
+      <span>Upload</span>
+    </div>
+    <div class="rail-line" data-line="1"></div>
+    <div class="rail-step" data-step="scan">
+      <div class="rail-dot"></div>
+      <span>Scan</span>
+    </div>
+    <div class="rail-line" data-line="2"></div>
+    <div class="rail-step" data-step="score">
+      <div class="rail-dot"></div>
+      <span>Score</span>
+    </div>
+    <div class="rail-line" data-line="3"></div>
+    <div class="rail-step" data-step="questions">
+      <div class="rail-dot"></div>
+      <span>Questions</span>
+    </div>
+  </nav>
+
+  <!-- LIBRARY STATUS -->
+  <section class="card" id="library-card">
+    <div class="library-head">
+      <h2>Resume library</h2>
+      <span class="library-count" id="library-count">0 / 20 stored</span>
+    </div>
+    <p class="hint">Resumes you upload are kept permanently — come back later and they'll still be here, no re-upload needed.</p>
+    <div class="library-list" id="library-list"></div>
+  </section>
+
+  <!-- UPLOAD CARD -->
+  <section class="card" id="upload-card">
+    <h2>1. Job description &amp; resumes</h2>
+
+    <label class="field-label" for="jd-text">Job description</label>
+    <textarea id="jd-text" rows="6" placeholder="Paste a job description, or use the prefilled sample..."></textarea>
+
+    <label class="field-label" for="resume-input">Resume files — up to 20 total, .pdf or .txt</label>
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="resume-input" accept=".pdf,.txt" multiple hidden />
+      <div class="dropzone-inner">
+        <span id="dropzone-text">Drop resumes here, or click to browse</span>
+      </div>
+    </div>
+    <div class="file-list" id="file-list"></div>
+
+    <button class="btn btn-primary" id="upload-btn" disabled>Upload resumes</button>
+    <p class="hint" id="upload-hint"></p>
+  </section>
+
+  <!-- ACTIONS CARD -->
+  <section class="card hidden" id="actions-card">
+    <h2>2. Run it against the library</h2>
+    <div class="actions-row actions-row-2">
+
+      <button class="action-btn" id="btn-scan">
+        <span class="action-title">Scan library</span>
+        <span class="action-desc">Load &amp; parse every resume + the JD</span>
+      </button>
+
+      <button class="action-btn" id="btn-score" disabled>
+        <span class="action-title">Score candidates</span>
+        <span class="action-desc">Rank the whole batch against the JD</span>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="card hidden" id="scan-result">
+    <h3>Scan result</h3>
+    <div class="kv-grid" id="scan-kv"></div>
+    <p class="chip-label" style="margin-top:16px;">Candidates loaded</p>
+    <div class="chips" id="scan-candidates"></div>
+  </section>
+
+  <section class="card hidden" id="score-result">
+    <h3>Ranked candidates</h3>
+    <div id="ranked-list"></div>
+  </section>
+
+  <section class="card hidden" id="questions-result">
+    <h3>Interview questions — <span id="questions-for"></span></h3>
+    <div id="questions-body"></div>
+  </section>
+
+  <p class="error" id="error-banner" role="alert"></p>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+Name: Rohit Verma
+Contact: rohit.verma.code@gmail.com | Hyderabad, India
+
+Skills: Python, Django REST Framework, MySQL, Redis, Docker, Git, pytest,
+Jenkins, basic AWS EC2
+
+Experience: 3 years at Meridian Health Tech as a backend developer on a
+patient-scheduling REST API consumed by mobile and web clients.
+
+Project: Rebuilt the appointment-scheduling service in Django REST
+Framework with Redis-backed caching for availability lookups, cutting
+peak response times by half. Set up a Jenkins pipeline for automated
+pytest runs and Docker image builds.
+
+Education: B.Tech in Computer Science, JNTU Hyderabad, 2021.

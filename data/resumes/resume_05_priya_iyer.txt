@@ -1,0 +1,16 @@
+Name: Priya Iyer
+Contact: priya.iyer.swe@gmail.com | Chennai, India
+
+Skills: Python, Flask, PostgreSQL, Docker, Git, pytest, AWS (EC2, S3,
+Lambda), React (basic), GitHub Actions
+
+Experience: 3.5 years of full-stack leaning backend experience, currently
+at Northgate Analytics building internal Flask APIs and a lightweight
+React admin dashboard.
+
+Project: Designed a multi-tenant REST API in Flask backed by PostgreSQL
+with row-level tenant isolation. Containerized the whole stack with
+Docker Compose and deployed it to AWS EC2 behind an S3-backed static
+frontend, with GitHub Actions handling test + deploy on merge.
+
+Education: B.Tech in Information Technology, Anna University, 2020.

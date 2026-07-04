@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+chroma_store/
+*.db
+outputs/shortlist_logs/*
+!outputs/shortlist_logs/.gitkeep
+.venv/

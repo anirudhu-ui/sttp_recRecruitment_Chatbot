@@ -1,0 +1,15 @@
+Name: Arjun Das
+Contact: arjun.das.dev@gmail.com | Kolkata, India
+
+Skills: Python, Pandas, NumPy, Flask (basic), SQL, Git, Excel, Tableau
+
+Experience: 2 years as a Data Analyst at Ferrow Insights, occasionally
+building small internal Flask dashboards to expose analysis results to
+other teams.
+
+Project: Built a small internal Flask app with two REST endpoints that
+served precomputed sales metrics from a PostgreSQL warehouse to a
+Tableau dashboard. Most of the day-to-day work was data analysis and
+reporting rather than backend engineering.
+
+Education: B.Sc. in Statistics, Calcutta University, 2022.

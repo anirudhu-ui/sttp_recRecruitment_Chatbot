@@ -1,0 +1,15 @@
+Name: Neha Joshi
+Contact: neha.joshi.code@gmail.com | Indore, India
+
+Skills: Python, Django, PostgreSQL, Git, Docker, pytest (learning),
+no AWS/cloud experience
+
+Experience: 1 year as a junior backend developer at Sparklane Systems,
+mostly fixing bugs and writing small features in an existing Django
+codebase.
+
+Project: Implemented a password-reset flow and a handful of CRUD
+endpoints in a Django REST Framework project. Still ramping up on
+automated testing and has never deployed to a cloud provider directly.
+
+Education: B.Tech in Computer Science, IET DAVV Indore, 2023.

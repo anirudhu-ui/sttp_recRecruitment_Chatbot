@@ -1,0 +1,15 @@
+Name: Ananya Rao
+Contact: ananya.rao.dev@gmail.com | Hyderabad, India
+
+Skills: Python, Django, Django REST Framework, PostgreSQL, Git, Docker,
+pytest, Redis, AWS EC2, Basic React
+
+Experience: 3 years as a Backend Developer at Finlytics Software Pvt Ltd.
+Built and maintained REST APIs for a loan-processing platform serving
+50,000+ daily users. Owned the payments microservice end to end.
+
+Project: Designed a rate-limiting and caching layer using Redis that cut
+average API latency by 40%. Migrated a monolithic Django app into three
+independently deployable services running in Docker containers on AWS EC2.
+
+Education: B.Tech in Computer Science, Osmania University, 2021.

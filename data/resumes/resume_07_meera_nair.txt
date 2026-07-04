@@ -1,0 +1,14 @@
+Name: Meera Nair
+Contact: meera.nair.tech@gmail.com | Kochi, India
+
+Skills: Java, Spring Boot, MySQL, Git, some Python scripting, Docker
+(learning)
+
+Experience: 3 years as a Java backend developer at Coastline Software,
+building REST services with Spring Boot.
+
+Project: Developed a Spring Boot microservice for inventory tracking
+with MySQL persistence. Has written small Python scripts for log
+parsing and data cleanup but has not built a production Python service.
+
+Education: B.Tech in Computer Science, Cochin University, 2021.

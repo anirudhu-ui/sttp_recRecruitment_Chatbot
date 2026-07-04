@@ -1,0 +1,43 @@
+{
+  "_source": "CACHED_FALLBACK - NOT LIVE DATA",
+  "_note": "Used only if Tavily is unavailable (missing key, API failure, or zero results). Regenerate periodically; do not present as live.",
+  "entries": [
+    {
+      "role": "AI Engineer",
+      "experience_level": "entry level",
+      "location": "India",
+      "cached_summary": "Entry-level AI Engineer roles in India commonly cited in the range of roughly 6-12 LPA depending on company size and stack, based on job-portal listings cached prior to this session.",
+      "cached_sources": [
+        "https://www.glassdoor.co.in/Salaries/ai-engineer-salary-SRCH_KO0,11.htm",
+        "https://www.ambitionbox.com/profile/ai-engineer-salary"
+      ]
+    },
+    {
+      "role": "Software Engineer",
+      "experience_level": "entry level",
+      "location": "India",
+      "cached_summary": "Entry-level Software Engineer compensation cached from job-portal aggregates prior to this session, typically in the broad 4-10 LPA band with wide variance by company tier.",
+      "cached_sources": [
+        "https://www.glassdoor.co.in/Salaries/software-engineer-salary-SRCH_KO0,18.htm"
+      ]
+    },
+    {
+      "role": "Data Scientist",
+      "experience_level": "mid level",
+      "location": "India",
+      "cached_summary": "Mid-level Data Scientist compensation cached from job-portal aggregates prior to this session, typically in the broad 10-20 LPA band with wide variance by company tier.",
+      "cached_sources": [
+        "https://www.ambitionbox.com/profile/data-scientist-salary"
+      ]
+    },
+    {
+      "role": "Machine Learning Engineer",
+      "experience_level": "entry level",
+      "location": "India",
+      "cached_summary": "Entry-level ML Engineer compensation cached from job-portal aggregates prior to this session, typically in the broad 6-14 LPA band with wide variance by company tier.",
+      "cached_sources": [
+        "https://www.glassdoor.co.in/Salaries/machine-learning-engineer-salary-SRCH_KO0,25.htm"
+      ]
+    }
+  ]
+}

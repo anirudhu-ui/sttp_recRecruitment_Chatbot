@@ -1,0 +1,14 @@
+Name: Ritu Bansal
+Contact: ritu.bansal.ux@gmail.com | Gurgaon, India
+
+Skills: Figma, Adobe XD, HTML, CSS, JavaScript (basic), user research,
+wireframing
+
+Experience: 3 years as a UI/UX Designer at a product design studio,
+working on mobile and web app interfaces.
+
+Project: Led the redesign of a fintech onboarding flow, running user
+interviews and building interactive Figma prototypes. No backend
+development or Python experience.
+
+Education: B.Des in Communication Design, NID Ahmedabad, 2021.
