@@ -1,13 +1,14 @@
 """
-RecruitFlow AI - Salary Research Agent (Member 3, Responsibility 3 continued)
-Node: salary_search_node
+RecruitFlow AI - Salary Research Agent
 
-Primary path: Tavily live web search (salary_search_tool).
-Fallback path: data/salary_fallback.json, ONLY on Tavily failure/missing key/no
-results, and always clearly labeled as cached, not live.
+Uses Tavily live web search for current salary evidence.
+The LLM summarizes only Tavily evidence.
 
-This is the ONLY node in Member 3's module that touches Tavily.
+If the LLM is unavailable, the system returns the actual
+Tavily source snippets instead of blindly extracting random
+salary numbers.
 """
+
 import json
 import os
 import re
@@ -17,166 +18,311 @@ from state import RecruitmentState
 from tools.salary_search import salary_search_tool, TavilyNotConfigured
 from agents.llm_client import get_llm
 
+
 FALLBACK_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "data", "salary_fallback.json"
+    os.path.dirname(os.path.dirname(__file__)),
+    "data",
+    "salary_fallback.json",
 )
 
-SUMMARY_SYSTEM_PROMPT = """You summarize live web search results into a short salary \
-benchmark summary for a recruiter.
 
-Rules:
-1. Only use information present in the provided search results. Never invent numbers,
-   ranges, or claims not supported by the given content.
-2. If the results disagree with each other (different ranges/figures), say so
-   explicitly and give the range of what was found rather than picking one number.
-3. If the results are thin or vague, say that clearly instead of guessing.
-4. Keep it to a short paragraph (3-5 sentences), recruiter-facing, no fluff.
+SUMMARY_SYSTEM_PROMPT = """
+You are a recruitment salary research analyst.
+
+Use ONLY the supplied LIVE WEB SEARCH EVIDENCE.
+
+You are estimating salary for one specific job role,
+experience level, and location.
+
+IMPORTANT RULES:
+
+1. Never invent salary figures.
+
+2. Never invent salary ranges.
+
+3. Never invent source names.
+
+4. Ignore salary figures that clearly refer to:
+   - unrelated job roles
+   - senior leadership roles
+   - company-wide maximum salaries
+   - total company salary ranges
+   - different countries
+   - different currencies
+   - monthly salaries when annual salary is requested
+
+5. Prefer evidence matching:
+   - the target role
+   - the target experience level
+   - the target location
+
+6. If multiple reliable results provide different salary figures,
+   explain that the sources vary.
+
+7. Do NOT simply list isolated salary numbers.
+
+8. Do NOT call a number an average unless the evidence explicitly
+   describes it as an average.
+
+9. Treat salary figures as market benchmarks, not guaranteed offers.
+
+Return the answer in this exact recruiter-friendly structure:
+
+Estimated Market Salary:
+<Give a supported annual salary range or clearly say the evidence
+does not support one reliable combined range.>
+
+Market Benchmark:
+<Explain the most useful salary benchmark found in the evidence.>
+
+Experience Context:
+<Explain how the candidate's experience level affects the salary.>
+
+Compensation Factors:
+<Briefly mention relevant technical skills or market factors that may
+increase compensation.>
+
+Market Note:
+<Explain source disagreement, uncertainty, or market variation.>
+
+Keep the complete response concise.
 """
 
 
 def _extract_location(salary_query: str) -> str:
     if not salary_query:
         return ""
+
     cleaned = salary_query.strip().rstrip("?.!,;:")
-    m = re.search(r"\bin\s+([A-Za-z][A-Za-z\s]{2,30})$", cleaned)
-    if m:
-        return m.group(1).strip()
+
+    match = re.search(
+        r"\bin\s+([A-Za-z][A-Za-z\s]{2,30})$",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+
+    if match:
+        return match.group(1).strip()
+
     return ""
 
 
-def _extract_salary_figures(results) -> list[str]:
-    figures: list[str] = []
-    patterns = [
-        r"(?:INR|Rs\.?)\s?[\d,.]+\s?(?:LPA|lakhs?|lakh|per annum|pa)?(?:\s?-\s?(?:INR|Rs\.?)?\s?[\d,.]+\s?(?:LPA|lakhs?|lakh|per annum|pa)?)?",
-        r"\$[\d,.]+(?:\s?-\s?\$?[\d,.]+)?\s?(?:per year|annually|/yr|a year)?",
-        r"[\d,.]+\s?(?:LPA|lakhs?|lakh)\s?(?:-\s?[\d,.]+\s?(?:LPA|lakhs?|lakh))?",
-    ]
-    for result in results or []:
-        text = " ".join(
-            str(result.get(key, "")) for key in ("title", "content") if result.get(key)
-        )
-        for pattern in patterns:
-            for match in re.findall(pattern, text, flags=re.IGNORECASE):
-                cleaned = " ".join(str(match).split())
-                if cleaned and cleaned not in figures:
-                    figures.append(cleaned)
+def _format_search_evidence(results: list[dict]) -> str:
+    evidence_blocks = []
 
-    filtered: list[str] = []
-    for figure in figures:
-        figure_l = figure.lower()
-        if any(figure_l != other.lower() and figure_l in other.lower() for other in figures):
-            continue
-        filtered.append(figure)
-    return filtered[:5]
-
-
-def _live_results_summary(role, experience_level, location, results) -> str:
-    figures = _extract_salary_figures(results)
-    if location and location.strip().lower() == "india":
-        india_figures = [
-            figure
-            for figure in figures
-            if re.search(r"\b(?:inr|rs\.?|lpa|lakh|lakhs)\b", figure, re.IGNORECASE)
-        ]
-        if india_figures:
-            figures = india_figures
-    location_text = f" in {location}" if location else ""
-    exp_text = f" for {experience_level}" if experience_level else ""
-    source_titles = []
-    for result in results or []:
+    for index, result in enumerate(results, start=1):
         title = result.get("title", "").strip()
-        if title and title not in source_titles:
-            source_titles.append(title)
+        url = result.get("url", "").strip()
+        content = result.get("content", "").strip()
 
-    if figures:
-        return (
-            f"Live Tavily salary search for {role}{exp_text}{location_text} "
-            f"found these salary figures in returned snippets: {', '.join(figures)}. "
-            "Use this as a market benchmark, and mention that figures vary by company, "
-            "city, and exact backend stack."
+        if not content:
+            continue
+
+        evidence_blocks.append(
+            f"""
+SOURCE {index}
+Title: {title}
+URL: {url}
+Evidence:
+{content}
+""".strip()
         )
 
-    titles = "; ".join(source_titles[:3]) if source_titles else "salary benchmark sources"
-    return (
-        f"Live Tavily search ran for {role}{exp_text}{location_text}, but the returned "
-        f"snippets did not expose a clean numeric salary range. Sources returned: {titles}. "
-        "A valid GROQ_KEY can summarize richer page snippets, but no salary number is "
-        "being invented here."
-    )
+    return "\n\n".join(evidence_blocks)
 
 
-def _fallback_summary(role, experience_level, location, results) -> str:
-    if results:
-        return _live_results_summary(role, experience_level, location, results)
+def _source_based_fallback(
+    role: str,
+    experience_level: str,
+    location: str,
+    results: list[dict],
+) -> str:
+    """
+    Safe fallback when the LLM is unavailable.
 
-    entry = _load_fallback(role, experience_level)
-    if entry is not None:
-        cached = entry.get("cached_summary", "")
-        return "[CACHED FALLBACK - NOT LIVE DATA] " + cached
+    We deliberately do NOT use regex to combine random salary figures.
+    Instead, we show the recruiter the actual live Tavily evidence.
+    """
 
-    return (
-        f"No cached salary fallback is available for {role}. Configure TAVILY_API_KEY "
-        "for live salary search, or add this role to data/salary_fallback.json."
-    )
-
-
-def _summarize_with_llm(role, experience_level, location, results) -> str:
     if not results:
         return (
-            "No usable live results were returned for this query - cannot state a "
-            "salary figure without fabricating one."
+            "Live salary search returned no usable market evidence. "
+            "A salary benchmark cannot be stated without supporting data."
         )
-    content_block = "\n\n".join(
-        f"- {r['title']}: {r['content']}" for r in results if r.get("content")
+
+    location_text = location or "unspecified market"
+    experience_text = experience_level or "unspecified experience"
+
+    lines = [
+        "Estimated Market Salary:",
+        (
+            "A reliable combined salary range could not be generated because "
+            "the salary summarization model is currently unavailable."
+        ),
+        "",
+        "Market Benchmark:",
+        (
+            f"Live Tavily evidence was retrieved for {role} in "
+            f"{location_text}."
+        ),
+        "",
+        "Experience Context:",
+        f"Target experience: {experience_text}.",
+        "",
+        "Live Search Evidence:",
+    ]
+
+    for index, result in enumerate(results[:3], start=1):
+        title = result.get("title", "Untitled source").strip()
+        content = " ".join(result.get("content", "").split())
+
+        if len(content) > 350:
+            content = content[:347] + "..."
+
+        lines.append(f"{index}. {title}")
+        lines.append(f"   {content}")
+
+    lines.extend(
+        [
+            "",
+            "Market Note:",
+            (
+                "The live sources should be reviewed before stating a final "
+                "salary range because the automated LLM summarizer is "
+                "currently unavailable. No salary figure has been invented."
+            ),
+        ]
     )
-    human = (
-        f"Role: {role}\nExperience level: {experience_level}\nLocation: {location or '(unspecified)'}\n\n"
-        f"Search results:\n{content_block}\n\n"
-        "Write the recruiter-facing salary summary now."
-    )
+
+    return "\n".join(lines)
+
+
+def _summarize_with_llm(
+    role: str,
+    experience_level: str,
+    location: str,
+    results: list[dict],
+) -> str:
+    if not results:
+        return (
+            "No usable live salary results were returned. "
+            "A salary figure cannot be stated without supporting evidence."
+        )
+
+    evidence = _format_search_evidence(results)
+
+    if not evidence:
+        return (
+            "The live search returned results, but no usable salary evidence "
+            "was available in the returned snippets."
+        )
+
+    human_prompt = f"""
+TARGET ROLE:
+{role}
+
+TARGET EXPERIENCE:
+{experience_level or "Not specified"}
+
+TARGET LOCATION:
+{location or "Not specified"}
+
+LIVE WEB SEARCH EVIDENCE:
+
+{evidence}
+
+Analyze only the evidence above.
+
+Create the recruiter-facing salary research summary now.
+"""
+
     try:
         llm = get_llm()
-        response = llm.invoke([("system", SUMMARY_SYSTEM_PROMPT), ("human", human)])
-        return response.content.strip()
+
+        response = llm.invoke(
+            [
+                ("system", SUMMARY_SYSTEM_PROMPT),
+                ("human", human_prompt),
+            ]
+        )
+
+        summary = response.content.strip()
+
+        if not summary:
+            raise ValueError("LLM returned an empty salary summary.")
+
+        return summary
+
     except Exception:
-        return _fallback_summary(role, experience_level, location, results)
+        return _source_based_fallback(
+            role,
+            experience_level,
+            location,
+            results,
+        )
 
 
-def _load_fallback(role: str, experience_level: str) -> Optional[dict]:
+def _load_fallback(
+    role: str,
+    experience_level: str,
+) -> Optional[dict]:
+
     if not os.path.exists(FALLBACK_PATH):
         return None
+
     try:
-        with open(FALLBACK_PATH, "r") as f:
-            data = json.load(f)
+        with open(FALLBACK_PATH, "r", encoding="utf-8") as file:
+            data = json.load(file)
     except Exception:
         return None
 
-    role_l = (role or "").strip().lower()
-    exp_l = (experience_level or "").strip().lower()
-    best = None
+    role_lower = (role or "").strip().lower()
+    experience_lower = (experience_level or "").strip().lower()
+
     entries = data.get("entries", [])
-    for entry in data.get("entries", []):
-        if entry.get("role", "").strip().lower() == role_l:
-            best = entry
-            if entry.get("experience_level", "").strip().lower() == exp_l:
+
+    best_match = None
+
+    for entry in entries:
+        entry_role = entry.get("role", "").strip().lower()
+        entry_experience = (
+            entry.get("experience_level", "").strip().lower()
+        )
+
+        if entry_role == role_lower:
+            best_match = entry
+
+            if entry_experience == experience_lower:
                 return entry
-    if best is not None:
-        return best
+
+    if best_match is not None:
+        return best_match
 
     role_aliases = [
-        (("backend", "python", "developer", "software"), "Software Engineer"),
-        (("machine learning", "ml ", "llm", "ai "), "AI Engineer"),
-        (("data", "analytics"), "Data Scientist"),
+        (
+            ("backend", "python", "developer", "software"),
+            "Software Engineer",
+        ),
+        (
+            ("machine learning", "ml ", "llm", "ai "),
+            "AI Engineer",
+        ),
+        (
+            ("data", "analytics"),
+            "Data Scientist",
+        ),
     ]
+
     for keywords, fallback_role in role_aliases:
-        if any(keyword in role_l for keyword in keywords):
+        if any(keyword in role_lower for keyword in keywords):
             for entry in entries:
-                if entry.get("role", "").strip().lower() == fallback_role.lower():
+                if (
+                    entry.get("role", "").strip().lower()
+                    == fallback_role.lower()
+                ):
                     return entry
 
-    if entries:
-        return entries[0]
-    return best
+    return None
 
 
 def salary_search_node(state: RecruitmentState) -> dict:
@@ -188,69 +334,101 @@ def salary_search_node(state: RecruitmentState) -> dict:
 
     if not jd_role and not salary_query:
         return {
-            "error_message": "salary_search_node: no jd_role or salary_query available to search for.",
-            "agent_logs": ["salary_search_node: aborted, nothing to search"],
+            "error_message": (
+                "salary_search_node: no jd_role or salary_query "
+                "available to search for."
+            ),
+            "agent_logs": [
+                "salary_search_node: aborted, nothing to search"
+            ],
         }
 
     role = jd_role or salary_query
     experience_level = jd_experience or ""
     location = _extract_location(salary_query)
 
-    # ---- Primary path: live Tavily ----
     try:
-        results_a = salary_search_tool.invoke(
-            {"role": role, "location": location, "experience_level": experience_level}
+        results = salary_search_tool.invoke(
+            {
+                "role": role,
+                "location": location,
+                "experience_level": experience_level,
+            }
         )
-        results_b = []
-        if location:
-            # second, broader query without location, in case the narrow one is thin
-            results_b = salary_search_tool.invoke(
-                {"role": role, "location": "", "experience_level": experience_level}
-            )
-        all_results = results_a + [r for r in results_b if r not in results_a]
 
-        if all_results:
-            summary_results = all_results
-            if location and _extract_salary_figures(results_a):
-                summary_results = results_a
-            summary = _summarize_with_llm(role, experience_level, location, summary_results)
-            sources = [r["url"] for r in all_results]
-            logs.append(
-                f"salary_search_node: used LIVE Tavily search "
-                f"({len(all_results)} results, role='{role}')"
+        if results:
+            summary = _summarize_with_llm(
+                role,
+                experience_level,
+                location,
+                results,
             )
+
+            sources = []
+
+            for result in results:
+                url = result.get("url", "")
+
+                if url and url not in sources:
+                    sources.append(url)
+
+            logs.append(
+                "salary_search_node: used LIVE Tavily search "
+                f"({len(results)} results, role='{role}')"
+            )
+
             return {
                 "salary_summary": summary,
                 "salary_sources": sources,
+                "error_message": "",
                 "agent_logs": logs,
             }
 
-        logs.append("salary_search_node: Tavily returned zero usable results, trying fallback cache")
+        logs.append(
+            "salary_search_node: Tavily returned zero usable results"
+        )
 
-    except TavilyNotConfigured as e:
-        logs.append(f"salary_search_node: TAVILY_API_KEY missing ({e}), trying fallback cache")
-    except Exception as e:
-        logs.append(f"salary_search_node: Tavily live search failed ({e}), trying fallback cache")
+    except TavilyNotConfigured as error:
+        logs.append(
+            "salary_search_node: TAVILY_API_KEY missing "
+            f"({error})"
+        )
 
-    # ---- Fallback path: cached JSON, clearly labeled ----
-    entry = _load_fallback(role, experience_level)
+    except Exception as error:
+        logs.append(
+            "salary_search_node: Tavily live search failed "
+            f"({error})"
+        )
+
+    entry = _load_fallback(
+        role,
+        experience_level,
+    )
+
     if entry is None:
         return {
             "error_message": (
-                "salary_search_node: Tavily unavailable and no matching fallback cache "
-                f"entry for role='{role}', experience='{experience_level}'."
+                "Salary research failed: live Tavily data was unavailable "
+                "and no matching cached benchmark exists."
             ),
             "salary_summary": "",
             "salary_sources": [],
-            "agent_logs": logs + ["salary_search_node: fallback cache miss, no data to return"],
+            "agent_logs": logs,
         }
 
-    logs.append(
-        f"salary_search_node: used FALLBACK CACHE (not live) for role='{entry.get('role')}'"
+    summary = (
+        "[CACHED FALLBACK - NOT LIVE DATA]\n"
+        + entry.get("cached_summary", "")
     )
-    summary = "[CACHED FALLBACK - NOT LIVE DATA] " + entry.get("cached_summary", "")
+
+    logs.append(
+        "salary_search_node: used FALLBACK CACHE "
+        f"for role='{entry.get('role', '')}'"
+    )
+
     return {
         "salary_summary": summary,
         "salary_sources": entry.get("cached_sources", []),
+        "error_message": "",
         "agent_logs": logs,
     }
