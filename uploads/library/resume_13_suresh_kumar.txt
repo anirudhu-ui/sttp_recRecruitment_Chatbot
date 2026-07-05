@@ -1,0 +1,14 @@
+Name: Suresh Kumar
+Contact: suresh.kumar.net@gmail.com | Coimbatore, India
+
+Skills: C#, .NET Core, SQL Server, Git, Azure DevOps
+
+Experience: 5 years as a .NET backend developer building enterprise
+internal tools for a manufacturing company.
+
+Project: Built a .NET Core Web API for inventory and production tracking
+integrated with SQL Server. Strong backend and API design background
+overall, but no professional Python experience and unfamiliar with the
+Django/Flask ecosystem, Docker, or AWS.
+
+Education: B.E. in Electronics and Communication, Anna University, 2018.

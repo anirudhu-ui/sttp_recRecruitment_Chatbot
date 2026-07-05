@@ -40,6 +40,8 @@ from flask import Flask, request, jsonify, send_from_directory
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from graph import build_graph
+from nodes.help_node import HELP_TEXT
+from nodes.fallback import FALLBACK_TEXT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -344,6 +346,137 @@ def questions():
     question_set = questions_by_candidate.get(matched_key) or {}
 
     return jsonify({"candidate_name": matched_key or candidate_name, "questions": question_set})
+
+
+def _format_query_result(state: dict) -> dict:
+    """JSON version of main.py's _format_turn_result. Turns ANY router
+    query_type (not just scan/score/questions) into a renderable payload,
+    so the free-text box can hit every route the terminal chatbot can:
+    load_data, count_applicants, screen_candidates, rewrite_jd,
+    interview_questions, salary_search, help, unknown."""
+    query_type = state.get("query_type")
+    error = state.get("error_message")
+    out: dict = {"query_type": query_type}
+
+    if error:
+        out["message"] = error
+        return out
+
+    if query_type == "load_data":
+        out["message"] = (
+            f"JD loaded and parsed. Role: {state.get('jd_role')} · "
+            f"Skills: {', '.join(state.get('jd_skills') or [])} · "
+            f"Experience: {state.get('jd_experience')} · "
+            f"Resumes loaded: {state.get('resume_count')}"
+        )
+    elif query_type == "count_applicants":
+        out["message"] = f"{state.get('resume_count')} applicants loaded."
+    elif query_type == "screen_candidates":
+        ranked = state.get("ranked_candidates") or []
+        out["message"] = f"Top candidates ({len(ranked)} screened):"
+        out["ranked_candidates"] = [
+            {
+                "candidate_name": c.get("candidate_name"),
+                "match_score": c.get("match_score"),
+                "matched_skills": c.get("matched_skills"),
+                "missing_skills": c.get("missing_skills"),
+            }
+            for c in ranked[:5]
+        ]
+    elif query_type == "rewrite_jd":
+        out["message"] = "Rewritten JD:"
+        out["rewritten_jd"] = state.get("rewritten_jd")
+    elif query_type == "interview_questions":
+        candidate = state.get("selected_candidate")
+        questions_by_candidate = state.get("interview_questions") or {}
+        matched_key = next(
+            (k for k in questions_by_candidate if candidate and candidate.lower() in k.lower()),
+            None,
+        )
+        out["message"] = f"Interview questions for {matched_key or candidate}:"
+        out["candidate_name"] = matched_key or candidate
+        out["questions"] = questions_by_candidate.get(matched_key) or {}
+    elif query_type == "salary_search":
+        out["message"] = "Salary research:"
+        out["salary_summary"] = state.get("salary_summary")
+    elif query_type == "help":
+        out["message"] = HELP_TEXT
+    elif query_type == "unknown":
+        logs = state.get("agent_logs") or []
+        reason = next((l for l in logs if l.startswith("LLM router reason:")), None)
+        out["message"] = FALLBACK_TEXT + (f"\n\n[{reason}]" if reason else "")
+    else:
+        out["message"] = f"Done ({query_type})."
+
+    return out
+
+
+def _shortlist_payload(config: dict) -> dict:
+    current = _graph.get_state(config).values
+    shortlist = current.get("shortlist_candidates") or []
+    return {
+        "needs_confirmation": True,
+        "shortlist_candidates": [
+            {"candidate_name": c.get("candidate_name"), "match_score": c.get("match_score")}
+            for c in shortlist
+        ],
+    }
+
+
+@app.post("/api/query")
+def query():
+    """Generic free-text endpoint - accepts ANY recruiter query through
+    the same router/graph the terminal chatbot (main.py) and the
+    fixed-step buttons use. This does not replace those buttons; it runs
+    alongside them so the UI stops being limited to a handful of preset
+    actions."""
+    data = request.get_json(force=True)
+    thread_id = data.get("thread_id") or str(uuid.uuid4())
+    user_query = (data.get("query") or "").strip()
+    if not user_query:
+        return jsonify({"error": "Empty query."}), 400
+
+    config = _config_for(thread_id)
+    session_jd_path = os.path.join(_session_dir(thread_id), "jd.txt")
+    jd_path = session_jd_path if os.path.exists(session_jd_path) else DEFAULT_JD_PATH
+
+    result = _graph.invoke(
+        {
+            "user_query": user_query,
+            "jd_path": jd_path,
+            "resume_directory": LIBRARY_DIR,
+            "error_message": "",
+        },
+        config=config,
+    )
+
+    if _graph.get_state(config).next == ("human_confirmation",):
+        return jsonify({"thread_id": thread_id, **_shortlist_payload(config)})
+
+    return jsonify({"thread_id": thread_id, **_format_query_result(result)})
+
+
+@app.post("/api/query/confirm")
+def query_confirm():
+    """Resumes a shortlist_action paused for human confirmation
+    (decision: yes / no / modify)."""
+    data = request.get_json(force=True)
+    thread_id = data.get("thread_id")
+    decision = (data.get("decision") or "").strip().lower()
+    feedback = data.get("feedback", "")
+    if not thread_id or decision not in ("yes", "no", "modify"):
+        return jsonify({"error": "Missing thread_id or invalid decision (yes/no/modify)."}), 400
+
+    config = _config_for(thread_id)
+    _graph.update_state(config, {"human_decision": decision, "human_feedback": feedback})
+    result = _graph.invoke(None, config=config)
+
+    if _graph.get_state(config).next == ("human_confirmation",):
+        return jsonify({"thread_id": thread_id, **_shortlist_payload(config)})
+
+    finalized = result.get("finalized_actions") or []
+    message = "Shortlist action cancelled." if decision == "no" else (finalized[-1] if finalized else "Done.")
+    return jsonify({"thread_id": thread_id, "message": message})
 
 
 if __name__ == "__main__":

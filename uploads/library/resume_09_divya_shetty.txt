@@ -1,0 +1,14 @@
+Name: Divya Shetty
+Contact: divya.shetty.dev@gmail.com | Mangalore, India
+
+Skills: Python, FastAPI, MongoDB, Git, Docker, basic pytest
+
+Experience: 1.5 years as a backend developer at a seed-stage startup,
+building FastAPI services on top of MongoDB rather than a relational
+database.
+
+Project: Built a FastAPI-based notification service backed by MongoDB
+and Docker for a mobile app with about 5,000 users. Limited exposure to
+SQL/PostgreSQL and no experience with AWS.
+
+Education: B.E. in Computer Science, NMAM Institute of Technology, 2023.

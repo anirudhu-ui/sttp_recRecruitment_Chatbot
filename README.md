@@ -5,7 +5,7 @@ recruitment chatbot problem.
 
 ## Merged Modules
 
-This folder is the final merged project for Members 1, 2, 3, and 4.
+This folder is the final merged project .
 
 | Member | Integrated files | Role |
 |---|---|---|
@@ -14,18 +14,7 @@ This folder is the final merged project for Members 1, 2, 3, and 4.
 | Member 3 | `agents/rewrite_jd.py`, `agents/interview_agent.py`, `agents/salary_agent.py`, `agents/member3_schemas.py`, `agents/llm_client.py`, `tools/salary_search.py`, `data/salary_fallback.json` | JD rewrite, interview questions, Tavily salary research |
 | Member 4 | `graph.py`, `main.py`, `nodes/shortlist.py`, `nodes/help_node.py`, `nodes/fallback.py`, `state.py` | LangGraph integration, terminal UI, human confirmation |
 
-## Fixes Applied During Merge
 
-1. Replaced the temporary Member 3 mocks with the real Member 3 zip contents.
-2. Kept stable graph node names: `rewrite_jd_node`, `interview_questions_node`, `salary_search_node`.
-3. Fixed Member 3 imports for the merged package layout.
-4. Made interview lookup compatible with Member 1 ranking records that use `candidate_name`.
-5. Stored interview questions by candidate name, with structured categories under each candidate.
-6. Made Tavily import lazy so salary fallback works even if `tavily-python` is not installed.
-7. Standardized `.env.example` on `TAVILY_API_KEY` and also support legacy `TAVILY_KEY`.
-8. Added default bundled data paths, so `main.py` can load the sample JD/resumes without manual state injection.
-9. Added deterministic fallbacks for JD parsing, resume screening, JD rewriting, interview questions, and salary fallback when API keys are missing or invalid.
-10. Preserved the primary API-backed behavior when valid `GEMINI_KEY`, `GROQ_KEY`, and `TAVILY_API_KEY` are available.
 
 ## Setup
 

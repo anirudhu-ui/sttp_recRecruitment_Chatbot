@@ -386,6 +386,104 @@ function renderQuestions(questionSet) {
 }
 
 // ---------------------------------------------------------------------
+// Free-text query (runs alongside the fixed buttons, not instead of)
+// ---------------------------------------------------------------------
+
+function renderQueryAnswer(data) {
+  const box = el("query-answer");
+  const lines = [data.message || ""];
+
+  if (data.ranked_candidates) {
+    data.ranked_candidates.forEach((c, i) => {
+      lines.push(
+        `${i + 1}. ${c.candidate_name} - score ${c.match_score}\n   matched: ${(c.matched_skills || []).join(", ")}\n   missing: ${(c.missing_skills || []).join(", ")}`
+      );
+    });
+  }
+  if (data.rewritten_jd) lines.push("", data.rewritten_jd);
+  if (data.questions) {
+    Object.entries(data.questions).forEach(([cat, items]) => {
+      lines.push("", cat.replace(/_/g, " ") + ":");
+      (items || []).forEach((q) => lines.push(`  - ${q}`));
+    });
+  }
+  if (data.salary_summary) lines.push("", String(data.salary_summary));
+
+  box.textContent = lines.join("\n");
+  box.classList.remove("hidden");
+}
+
+function showConfirmRow(shortlist) {
+  const box = el("query-answer");
+  const names = (shortlist || [])
+    .map((c, i) => `  ${i + 1}. ${c.candidate_name} (score ${c.match_score})`)
+    .join("\n");
+  box.textContent = `Proposed shortlist:\n${names}\n\nConfirm, modify, or cancel below.`;
+  box.classList.remove("hidden");
+  el("confirm-row").classList.remove("hidden");
+}
+
+async function handleQuery() {
+  const input = el("query-input");
+  const q = input.value.trim();
+  if (!q) return;
+  showError("");
+  const btn = el("query-btn");
+  btn.disabled = true;
+  btn.textContent = "Working...";
+  el("confirm-row").classList.add("hidden");
+
+  try {
+    const res = await fetch("/api/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thread_id: state.threadId, query: q }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Query failed.");
+
+    if (data.thread_id) state.threadId = data.thread_id;
+    if (data.needs_confirmation) {
+      showConfirmRow(data.shortlist_candidates);
+    } else {
+      renderQueryAnswer(data);
+    }
+    input.value = "";
+    await refreshLibrary();
+  } catch (e) {
+    showError(e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = "Send";
+}
+
+async function handleConfirm(decision) {
+  showError("");
+  let feedback = "";
+  if (decision === "modify") {
+    feedback = prompt("What should change?") || "";
+  }
+  try {
+    const res = await fetch("/api/query/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thread_id: state.threadId, decision, feedback }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Confirmation failed.");
+
+    if (data.needs_confirmation) {
+      showConfirmRow(data.shortlist_candidates);
+    } else {
+      el("confirm-row").classList.add("hidden");
+      renderQueryAnswer({ message: data.message });
+    }
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+// ---------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
@@ -397,4 +495,12 @@ window.addEventListener("DOMContentLoaded", () => {
   el("upload-btn").addEventListener("click", handleUpload);
   el("btn-scan").addEventListener("click", handleScan);
   el("btn-score").addEventListener("click", handleScore);
+
+  el("query-btn").addEventListener("click", handleQuery);
+  el("query-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleQuery();
+  });
+  el("confirm-yes").addEventListener("click", () => handleConfirm("yes"));
+  el("confirm-modify").addEventListener("click", () => handleConfirm("modify"));
+  el("confirm-no").addEventListener("click", () => handleConfirm("no"));
 });

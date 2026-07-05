@@ -1,0 +1,15 @@
+Name: Amitabh Tripathi
+Contact: amitabh.tripathi.mob@gmail.com | Noida, India
+
+Skills: Kotlin, Android SDK, Java, Firebase, Git, REST API consumption
+(client-side)
+
+Experience: 3 years as an Android developer building consumer mobile
+apps that consume REST APIs built by other teams.
+
+Project: Built an Android e-commerce app in Kotlin integrating Firebase
+auth and a third-party payments SDK. Comfortable consuming REST APIs
+from the client side but has never designed or implemented a backend
+service, and has no professional Python experience.
+
+Education: B.Tech in Computer Science, AKGEC Ghaziabad, 2021.

@@ -48,6 +48,22 @@
     </div>
   </nav>
 
+  <!-- FREE-TEXT QUERY (works alongside the buttons below, not instead of) -->
+  <section class="card" id="query-card">
+    <h2>Ask anything</h2>
+    <p class="hint">Type any recruiter request — not just the buttons below. e.g. "how many applicants?", "rewrite this jd for a startup", "interview questions for Ananya", "salary range for backend developer", "shortlist the top 3".</p>
+    <div class="query-row">
+      <input type="text" id="query-input" placeholder="Type a request..." />
+      <button class="btn btn-primary" id="query-btn">Send</button>
+    </div>
+    <div class="card query-answer hidden" id="query-answer"></div>
+    <div class="confirm-row hidden" id="confirm-row">
+      <button class="btn" data-decision="yes" id="confirm-yes">Confirm</button>
+      <button class="btn" data-decision="modify" id="confirm-modify">Modify</button>
+      <button class="btn" data-decision="no" id="confirm-no">Cancel</button>
+    </div>
+  </section>
+
   <!-- LIBRARY STATUS -->
   <section class="card" id="library-card">
     <div class="library-head">

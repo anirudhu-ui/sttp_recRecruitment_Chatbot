@@ -1,0 +1,16 @@
+Name: Vikram Singh
+Contact: vikram.singh.cs@gmail.com | Jaipur, India
+
+Skills: Python, Django (coursework/projects only), SQLite, Git, HTML/CSS
+
+Experience: Fresher - no full-time professional experience yet. Completed
+a 3-month internship at a local startup doing QA and minor bug fixes on
+a Django app.
+
+Project: Built a personal project - a Django-based expense tracker with
+SQLite storage and basic authentication, deployed on Render for a
+college portfolio. No experience with Docker, testing frameworks, or
+cloud deployment beyond that.
+
+Education: B.Tech in Computer Science, MNIT Jaipur, 2024 (recent
+graduate).

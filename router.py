@@ -16,6 +16,7 @@ by adding re.IGNORECASE and stripping a leading "candidate" token from
 whatever the fallback patterns capture. Everything else in this file is
 unchanged from Member 2's original.
 """
+import logging
 import os
 import re
 from typing import Optional
@@ -27,6 +28,8 @@ from state import RecruitmentState
 from router_schema import QueryClassification, QueryType
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 VALID_ROUTES = {
     "load_data", "count_applicants", "screen_candidates", "rewrite_jd",
@@ -40,7 +43,10 @@ def _get_llm():
     """Lazy init - LLM only built when actually needed (ambiguous path)."""
     global _llm
     if _llm is None:
-        _llm = ChatGroq(model="openai/gpt-oss-120b", api_key=os.getenv("GROQ_KEY"))
+        key = os.getenv("GROQ_KEY")
+        if not key:
+            raise RuntimeError("GROQ_KEY missing from environment. Add it to your .env file.")
+        _llm = ChatGroq(model="openai/gpt-oss-120b", api_key=key)
     return _llm
 
 
@@ -48,7 +54,12 @@ def _get_llm():
 # DETERMINISTIC RULES (checked first, zero LLM cost)
 # ======================================================================
 _RULES = [
-    ("help", [r"\bhelp\b", r"^\s*\?+\s*$", r"what can you do"]),
+    ("help", [
+        r"\bhelp\b", r"^\s*\?+\s*$", r"what can you do",
+        r"^\s*(hi|hello|hey|hiya|yo|sup|howdy)\s*[!.,]*\s*$",
+        r"^\s*good\s*(morning|afternoon|evening)\s*[!.,]*\s*$",
+        r"^\s*(thanks|thank you|ok|okay|cool)\s*[!.,]*\s*$",
+    ]),
     ("count_applicants", [
         r"how many applicant", r"how many resum", r"applicant count",
         r"number of resum", r"number of applicant", r"count.*applicant",
@@ -94,13 +105,24 @@ def _deterministic_classify(query: str) -> Optional[QueryType]:
 
 
 def _llm_classify(query: str) -> QueryClassification:
-    """Structured-output LLM fallback for genuinely ambiguous queries."""
+    """Structured-output LLM fallback for queries the deterministic rules
+    couldn't match. Biased toward picking the CLOSEST route rather than
+    bailing to unknown - unknown is reserved for genuinely unrelated
+    chitchat/off-topic messages, not just unfamiliar phrasing."""
     system = (
-        "You are a strict query router for a recruitment chatbot. "
-        "Classify the recruiter's message into exactly one of: "
-        "load_data, count_applicants, screen_candidates, rewrite_jd, "
-        "interview_questions, salary_search, shortlist_action, help, unknown. "
-        "If nothing fits, use unknown."
+        "You are a query router for a recruitment chatbot with these routes:\n"
+        "- load_data: recruiter is providing/pointing to a JD or resumes to ingest\n"
+        "- count_applicants: asking how many resumes/applicants are loaded\n"
+        "- screen_candidates: wants candidates ranked/scored/shortlisted against the JD\n"
+        "- rewrite_jd: wants the job description rewritten/improved/retoned\n"
+        "- interview_questions: wants interview questions for a named candidate\n"
+        "- salary_search: asking about salary/pay/compensation benchmarks\n"
+        "- shortlist_action: wants to finalize/lock in specific candidates\n"
+        "- help: greeting, small talk, or asking what the bot can do\n"
+        "- unknown: ONLY for messages genuinely unrelated to recruiting\n"
+        "Always pick the closest matching route even if phrasing is informal, "
+        "vague, or contains typos. Prefer any route over unknown when there is "
+        "a plausible recruiting intent."
     )
     messages = [("system", system), ("human", query)]
     try:
@@ -109,7 +131,14 @@ def _llm_classify(query: str) -> QueryClassification:
             return QueryClassification(query_type="unknown", reason="malformed structured output")
         return result
     except Exception as e:
-        return QueryClassification(query_type="unknown", reason=f"LLM router failure: {e}")
+        # Full technical detail goes to the server-side log only. Never
+        # leak raw provider/exception text as if it were a normal
+        # classification reason - that reads as a crash to the recruiter.
+        logger.warning("LLM router failure for query %r: %s", query, e)
+        return QueryClassification(
+            query_type="unknown",
+            reason="AI classifier unavailable right now - try rephrasing, or type `help`.",
+        )
 
 
 # ======================================================================

@@ -1,0 +1,14 @@
+Name: Farhan Khan
+Contact: farhan.khan.eng@gmail.com | Lucknow, India
+
+Skills: Python, Flask, PostgreSQL, Git, basic Docker, no CI/CD experience
+
+Experience: 2 years as a backend developer at a small ed-tech company,
+maintaining a Flask monolith with a PostgreSQL database.
+
+Project: Added several new REST endpoints to an existing Flask
+application for a quiz platform and wrote basic manual test scripts
+(no automated pytest suite). Has read about but never used AWS or
+message queues in production.
+
+Education: B.Tech in Information Technology, AKTU, 2022.

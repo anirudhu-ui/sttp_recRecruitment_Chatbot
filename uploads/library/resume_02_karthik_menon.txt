@@ -1,0 +1,15 @@
+Name: Karthik Menon
+Contact: karthik.menon91@gmail.com | Bengaluru, India
+
+Skills: Python, Flask, REST APIs, MySQL, SQLAlchemy, Git, unittest,
+Docker, GitHub Actions, Celery, RabbitMQ
+
+Experience: 4 years of backend engineering experience, most recently at
+Vantage Retail Systems building order-management APIs in Flask.
+
+Project: Implemented an async order-processing pipeline using Celery and
+RabbitMQ that reduced checkout latency during flash sales. Wrote a
+GitHub Actions CI/CD pipeline running the full pytest/unittest suite and
+Docker image build on every merge.
+
+Education: B.E. in Information Technology, PES University, 2020.

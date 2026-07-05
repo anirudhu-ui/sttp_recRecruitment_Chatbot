@@ -380,6 +380,47 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.query-row {
+  display: flex;
+  gap: 10px;
+}
+
+.query-row input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.query-row input:focus {
+  outline: none;
+  border-color: var(--border);
+  border-bottom-color: var(--primary);
+}
+
+.query-answer {
+  margin-top: 16px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirm-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.confirm-row.hidden,
+.query-answer.hidden {
+  display: none;
+}
+
 .error {
   color: var(--bad);
   font-size: 13px;

@@ -1,0 +1,48 @@
+Job Title: Backend Python Developer
+
+Company: Deloitte
+Location: Hyderabad, India (Hybrid)
+Employment Type: Full-time
+
+About the Role:
+We are looking for a Backend Python Developer to design, build, and
+maintain scalable REST APIs and backend services for Deloitte client
+solutions and internal platforms. You will work closely with frontend
+engineers, DevOps, consultants, and product stakeholders to ship
+reliable, well-tested backend systems.
+
+Required Skills:
+- Strong proficiency in Python
+- Experience building REST APIs with Django or Flask
+- Solid understanding of SQL and relational databases (PostgreSQL/MySQL)
+- Familiarity with Git and collaborative version control workflows
+- Experience writing unit tests (pytest or unittest)
+- Understanding of Docker for containerized deployments
+
+Preferred Skills:
+- Experience with AWS (EC2, S3, Lambda)
+- Familiarity with Redis or other caching layers
+- Exposure to CI/CD pipelines (GitHub Actions, Jenkins)
+- Basic understanding of React or another frontend framework
+- Experience with message queues (Celery, RabbitMQ, Kafka)
+
+Experience Required:
+2 to 4 years of professional backend development experience. Fresh
+graduates with strong internship or project experience may also be
+considered for the junior track.
+
+Education:
+Bachelor's degree in Computer Science, Information Technology, or a
+related field (B.Tech/B.E. or equivalent).
+
+Responsibilities:
+- Design and implement RESTful APIs for core product features
+- Write clean, tested, maintainable Python code
+- Optimize database queries and schema design for performance
+- Collaborate with frontend and DevOps teams on deployment pipelines
+- Participate in code reviews and mentor junior engineers
+- Debug and resolve production issues in a timely manner
+
+How to Apply:
+Interested candidates should submit their resume along with links to
+any relevant GitHub projects or portfolios.
